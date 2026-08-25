@@ -1,0 +1,7 @@
+# 自动保持 GitHub Actions 版本最新（每周期检查一次，开 PR 升级）
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

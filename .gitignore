@@ -1,0 +1,12 @@
+# IDE project config
+.idea/
+
+# Build output
+dist/
+
+# Intermediate pipeline state (IDEA zip + extracted jars + state.json)
+work/
+
+# Misc
+*.log
+.DS_Store

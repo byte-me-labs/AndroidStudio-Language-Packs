@@ -1,0 +1,81 @@
+name: Build Android Studio Language Packs
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '47 4 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-langpacks
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SKIP_IF_EXISTS: '1'
+      # 手动触发 → 强制更新（跳过幂等检查，softprops 原地更新已存在 Release）；
+      # 定时触发 → 幂等检测（Release 已存在则跳过构建/发布）。
+      FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: 1. Resolve Android Studio version & skip check
+        id: resolve-as
+        run: bash scripts/resolve-as.sh
+
+      - name: 2. Resolve matching IDEA version
+        id: resolve-idea
+        if: steps.resolve-as.outputs.skip != 'true'
+        run: bash scripts/resolve-idea.sh
+
+      - name: 3. Download & extract localization jars
+        if: steps.resolve-as.outputs.skip != 'true'
+        run: bash scripts/extract-jars.sh
+
+      - name: 4. Rewrite plugin.xml & build plugin zips
+        if: steps.resolve-as.outputs.skip != 'true'
+        run: bash scripts/build-packs.sh
+
+      - name: 5. Publish GitHub Release
+        if: steps.resolve-as.outputs.skip != 'true'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v${{ steps.resolve-as.outputs.as_major }}
+          name: Android Studio 语言包 ${{ steps.resolve-as.outputs.as_major }} (platform ${{ steps.resolve-as.outputs.platform_major }})
+          body_path: dist/release-notes.md
+          files: dist/localization-*.zip
+          token: ${{ github.token }}
+
+      - name: 6. Refresh README 最新版本信息
+        if: steps.resolve-as.outputs.skip != 'true'
+        run: bash scripts/update-readme.sh
+
+      - name: 7. Commit README update back
+        if: steps.resolve-as.outputs.skip != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet README.md; then
+            echo "README 无变化，跳过提交"
+          else
+            git add README.md
+            git commit -m "docs: 更新 README 最新版本信息（自动构建）"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+            echo "README 已提交并推送"
+          fi
+
+      - name: Job summary
+        if: always()
+        run: |
+          echo "## 构建结果" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat dist/metadata.json >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || echo '{}' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
