@@ -5,8 +5,17 @@
 ## 最新版本
 
 <!-- LATEST-BEGIN -->
-构建信息将在每次自动构建成功后刷新。
-<!-- LATEST-END -->
+构建日期 **2026-08-25**，适配 **Android Studio 2026.1.3**（IntelliJ 平台 261），语言包提取自 **IDEA Ultimate 2026.1.5**（build 261.27258.48）。
+
+| 版本 | 值 |
+|---|---|
+| Release | `v2026.1` |
+| Android Studio | 2026.1.3 |
+| IntelliJ 平台 | 261 |
+| IDEA 来源 | 2026.1.5（build 261.27258.48） |
+| 构建日期 | 2026-08-25 |
+
+👉 [前往 Releases 下载最新语言包](https://github.com/byte-me-labs/AndroidStudio-Language-Packs/releases/latest)
 
 ## 产物
 
